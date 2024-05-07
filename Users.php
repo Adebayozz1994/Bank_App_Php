@@ -5,13 +5,13 @@ class User extends config{
     {
         parent::__construct();
     }
-    public function createUser( $firstname, $lastname , $email, $password, $address){
-    $query = "INSERT INTO  `user_table` (`firstname`, `lastname`, `email`, `password`, `address`) VALUES (?,?,?,?,?)";
+    public function createUser( $first_name, $last_name , $email, $password, $address,$phone_number,$gender){
+    $query = "INSERT INTO  `bank_table` (`first_name`, `last_name`, `email`, `password`, `address`,`phone_number`,`gender`) VALUES (?,?,?,?,?,?,?)";
     $hashpassword = password_hash($password, PASSWORD_DEFAULT);
-    $binder = array('sssss', $firstname, $lastname, $email, $hashpassword, $address);
+    $binder = array('sssssis', $first_name, $last_name, $email, $hashpassword, $address,$phone_number,$gender);
     // parent::create($query, $binder);
 
-    $emailQuery = "SELECT * FROM `user_table` WHERE `email` = ?";
+    $emailQuery = "SELECT * FROM `bank_table` WHERE `email` = ?";
     $emailBinder = array('s', $email);
     $emailResult = $this->checkIfExist($emailQuery, $emailBinder);
     if($emailResult) {

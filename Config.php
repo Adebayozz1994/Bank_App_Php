@@ -5,7 +5,7 @@ class config{
     public $result;
     public function __construct()
     {
-        $this->connect = new mysqli('localhost','root','','mysql_db');
+        $this->connect = new mysqli('localhost','root','','bank_app');
         if($this->connect->connect_error){
             // echo json_encode('error') ;
         }else{
