@@ -8,7 +8,7 @@ class User extends config{
     public function createUser( $first_name, $last_name , $email, $password, $address,$phone_number,$gender){
     $query = "INSERT INTO  `bank_table` (`first_name`, `last_name`, `email`, `password`, `address`,`phone_number`,`gender`) VALUES (?,?,?,?,?,?,?)";
     $hashpassword = password_hash($password, PASSWORD_DEFAULT);
-    $binder = array('sssssis', $first_name, $last_name, $email, $hashpassword, $address,$phone_number,$gender);
+    $binder = array('sssssss', $first_name, $last_name, $email, $hashpassword, $address,$phone_number,$gender);
     // parent::create($query, $binder);
 
     $emailQuery = "SELECT * FROM `bank_table` WHERE `email` = ?";

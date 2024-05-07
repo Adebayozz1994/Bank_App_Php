@@ -17,7 +17,7 @@ require('users.php');
     $gender =$userDetails['gender'];
 
 
-     echo json_encode($userDetails);
+    //  echo json_encode($userDetails);
 
 
     $User = new User();
