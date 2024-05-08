@@ -12,6 +12,7 @@ class config{
             // echo json_encode('connected') ;
         }
     }
+    
     public function create($query,$binder){
         
         $stmt = $this->connect->prepare($query);
@@ -37,5 +38,8 @@ class config{
             return false;
         }
      }
+     public function getConnection() {
+        return $this->connect;
+    }
 }
 ?>

@@ -38,19 +38,38 @@ class User extends config{
 
     }
 
+    }
 
 
-    //  $this->connect->prepare($query);
-    //  $hashpassword = password_hash($password, PASSWORD_DEFAULT);
-    //  $stmt = $this->connect->prepare($query);
-    //  $stmt->bind_param("sssss",$firstname, $lastname, $email, $hashpassword,$address);
-    //  $safeUser  = $stmt->execute();
-    //  if($safeUser){
-    //     echo "user saved successfully";
-    //  }else{
-    //     echo "user not saved";
-    //  }
+    public function loginUser($email, $password) {
+        $query = "SELECT * FROM `bank_table` WHERE `email` = ?";
+        $binder = array('s', $email);
 
+        $stmt = $this->getConnection()->prepare($query);
+        $stmt->bind_param(...$binder);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            $user = $result->fetch_assoc();
+            if (password_verify($password, $user['password'])) {
+                return [
+                    'status' => true,
+                    'message' => 'Login successful'
+                    
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Invalid credentials'
+                ];
+            }
+        } else {
+            return [
+                'status' => false,
+                'message' => 'User not found'
+            ];
+        }
     }
 
 }
