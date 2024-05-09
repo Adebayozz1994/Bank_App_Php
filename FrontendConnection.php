@@ -11,6 +11,7 @@ require('users.php');
     $first_name = $userDetails['first_name'];
     $last_name = $userDetails['last_name'];
     $email = $userDetails['email'];
+    // $password = $userDetails['password'];
     $password = password_hash($userDetails['password'],PASSWORD_DEFAULT);
     $address =$userDetails['address'];
     $phone_number =$userDetails['phone_number'];

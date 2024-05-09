@@ -13,6 +13,6 @@ $password = $userDetails['password'];
 $User = new loginconnect();
 $response = $User->loginUser($email, $password);
 
-// Return the response as JSON
+
 echo json_encode($response);
 ?>
