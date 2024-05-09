@@ -23,13 +23,13 @@ class User extends config{
     }else {
         $result = $this->create($query, $binder);
         if($result){
-            // echo 'user save successfully';
+            
           return  [
                 'status' => true,
                 'message' => 'user save successfully'
             ];
         }else{
-            // echo 'user not save';
+           
           return  [
                 'status' => false,
                 'message' => 'error occured'
@@ -38,40 +38,9 @@ class User extends config{
 
     }
 
+
     }
-
-
-    public function loginUser($email, $password) {
-        $query = "SELECT * FROM `bank_table` WHERE `email` = ?";
-        $binder = array('s', $email);
-
-        $stmt = $this->getConnection()->prepare($query);
-        $stmt->bind_param(...$binder);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($result->num_rows > 0) {
-            $user = $result->fetch_assoc();
-            if (password_verify($password, $user['password'])) {
-                return [
-                    'status' => true,
-                    'message' => 'Login successful'
-                    
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Invalid credentials'
-                ];
-            }
-        } else {
-            return [
-                'status' => false,
-                'message' => 'User not found'
-            ];
-        }
-    }
-
+    
 }
 
 $newUser =  new User();
