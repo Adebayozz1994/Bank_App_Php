@@ -15,19 +15,20 @@ class loginconnect extends config {
         $result = $stmt->get_result();
 
         if ($result->num_rows > 0) {
-            
             $user = $result->fetch_assoc();
             $hashedPassword = $user['password'];
             $userId = $user['user_id'];
-            
 
-           
             if (password_verify($password, $hashedPassword)) {
-               
                 return [
                     'status' => true,
                     'message' => 'User login successful',
-                    'userId' => $userId
+                    'user' => [
+                        'userId' => $user,
+                        'email' => $email,
+                        'id' => $userId
+                    ]
+                    
                 ];
             } else {
                 
@@ -37,7 +38,7 @@ class loginconnect extends config {
                 ];
             }
         } else {
-            
+        
             return [
                 'status' => false,
                 'message' => 'User not found'

@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once('loginconnect.php');
 
 header("Access-Control-Allow-Origin: http://localhost:4200");
@@ -12,7 +13,5 @@ $password = $userDetails['password'];
 
 $User = new loginconnect();
 $response = $User->loginUser($email, $password);
-
-
 echo json_encode($response);
 ?>
