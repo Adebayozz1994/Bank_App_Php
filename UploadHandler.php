@@ -17,30 +17,21 @@ class UploadHandler extends Config {
     }
     
 
-    public function uploadProfilePicture($file) {
-        $name = $file['name'];
-        $tmp = $file['tmp_name'];
-        $newname = time(). $name;
-        $uploadPath = "pictures/" . $newname;
+    public function uploadProfilePicture() {
+        $picture = $_FILES['file'];
+        $name = $picture['name'];
+        $tmp= $picture['tmp_name'];
+        $newname=time().$name;
+        $move=move_uploaded_file($tmp,"pictures/".$newname);
 
-        if (move_uploaded_file($tmp, $uploadPath)) {
+        if ($move) {
             $query = "UPDATE `bank_table` SET `profile_picture` = ? WHERE `user_id` = ?";
             $stmt = $this->connection->prepare($query);
 
-            if (!$stmt) {
-                return ["success" => false, "error" => "Failed to prepare statement"];
-            }
-
             $stmt->bind_param('si', $newname, $this->userId);
 
-            if ($stmt->execute()) {
-                return ["success" => true, "profile_picture_url" => $uploadPath];
-            } else {
-                return ["success" => false, "error" => "Failed to execute statement"];
-            }
-        } else {
-            return ["success" => false, "error" => "Failed to move uploaded file"];
-        }
+          
+        } 
     }
 }
 
