@@ -1,40 +1,56 @@
 <?php
 require_once("config.php");
+header("Access-Control-Allow-Origin: http://localhost:4200");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+header("Content-Type: application/json");
+header("Access-Control-Allow-Methods: POST");
 
-class UploadHandler extends config{
+class UploadHandler extends Config {
     private $userId;
     private $connection;
 
-    public function __construct($userId, $connection) {
+    public function __construct($userId) {
+        parent::__construct();
         $this->userId = $userId;
-        $this->connection = $connection; 
+        $this->connection = $this->getConnection(); 
+        
     }
+    
 
     public function uploadProfilePicture($file) {
         $name = $file['name'];
         $tmp = $file['tmp_name'];
-        $newname = time() . $name;
+        $newname = time(). $name;
         $uploadPath = "pictures/" . $newname;
 
         if (move_uploaded_file($tmp, $uploadPath)) {
-           
-            $query = "UPDATE `user_table` SET `profile_picture` = ? WHERE `user_id` = ?";
+            $query = "UPDATE `bank_table` SET `profile_picture` = ? WHERE `user_id` = ?";
             $stmt = $this->connection->prepare($query);
 
             if (!$stmt) {
-                return false; 
+                return ["success" => false, "error" => "Failed to prepare statement"];
             }
 
             $stmt->bind_param('si', $newname, $this->userId);
 
             if ($stmt->execute()) {
-                return true; 
+                return ["success" => true, "profile_picture_url" => $uploadPath];
             } else {
-                return false; 
+                return ["success" => false, "error" => "Failed to execute statement"];
             }
         } else {
-            return false; 
+            return ["success" => false, "error" => "Failed to move uploaded file"];
         }
     }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $userId = $_POST['userId'];
+    $file = $_FILES['file'];
+
+    $uploadHandler = new UploadHandler($userId);
+    $result = $uploadHandler->uploadProfilePicture($file);
+
+    echo json_encode($result);
 }
 ?>

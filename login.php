@@ -1,5 +1,5 @@
 <?php
-session_start();
+
 require_once('loginconnect.php');
 
 header("Access-Control-Allow-Origin: http://localhost:4200");
