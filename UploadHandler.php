@@ -17,6 +17,7 @@ class UploadHandler extends Config {
     }
 
     public function uploadProfilePicture() {
+
         $picture = $_FILES['file'];
         $name = $picture['name'];
         $tmp = $picture['tmp_name'];
@@ -26,18 +27,32 @@ class UploadHandler extends Config {
         if (move_uploaded_file($tmp, $uploadPath)) {
             $query = "UPDATE `bank_table` SET `profile_picture` = ? WHERE `user_id` = ?";
             $stmt = $this->connection->prepare($query);
+            if($stmt){
+                $stmt->bind_param('si', $newname, $this->userId);
+                $stmt->execute();
+                if ($stmt->execute()) {
+                    return [
+                        "success" => true, 
+                        "profile_picture_url" => $uploadPath,
+                        'userId' => $this->userId
+                    ];
+                    ;
+                
+                } 
+                else {
+                    return ["success" => false, "error" => "Failed to execute statement: " . $stmt->error];
+                }
+            };
+            // if (!$stmt) {
+            //     return ["success" => false, "error" => "Failed to prepare statement: " . $this->connection->error];
+            // }
     
-            if (!$stmt) {
-                return ["success" => false, "error" => "Failed to prepare statement: " . $this->connection->error];
-            }
     
-            $stmt->bind_param('si', $newname, $this->userId);
-    
-            if ($stmt->execute()) {
-                return ["success" => true, "profile_picture_url" => $uploadPath];
-            } else {
-                return ["success" => false, "error" => "Failed to execute statement: " . $stmt->error];
-            }
+            // if ($stmt->execute()) {
+            //     return ["success" => true, "profile_picture_url" => $uploadPath];
+            // } else {
+            //     return ["success" => false, "error" => "Failed to execute statement: " . $stmt->error];
+            // }
         } else {
             return ["success" => false, "error" => "Failed to move uploaded file"];
         }
