@@ -1,5 +1,6 @@
 <?php
-require_once("config.php");
+require('config.php');
+
 header("Access-Control-Allow-Origin: http://localhost:4200");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 header("Content-Type: application/json");
@@ -13,34 +14,40 @@ class UploadHandler extends Config {
         parent::__construct();
         $this->userId = $userId;
         $this->connection = $this->getConnection(); 
-        
     }
-    
 
     public function uploadProfilePicture() {
         $picture = $_FILES['file'];
         $name = $picture['name'];
-        $tmp= $picture['tmp_name'];
-        $newname=time().$name;
-        $move=move_uploaded_file($tmp,"pictures/".$newname);
-
-        if ($move) {
+        $tmp = $picture['tmp_name'];
+        $newname = time().$name;
+        $uploadPath = "pictures/".$newname;
+    
+        if (move_uploaded_file($tmp, $uploadPath)) {
             $query = "UPDATE `bank_table` SET `profile_picture` = ? WHERE `user_id` = ?";
             $stmt = $this->connection->prepare($query);
-
+    
+            if (!$stmt) {
+                return ["success" => false, "error" => "Failed to prepare statement: " . $this->connection->error];
+            }
+    
             $stmt->bind_param('si', $newname, $this->userId);
-
-          
-        } 
+    
+            if ($stmt->execute()) {
+                return ["success" => true, "profile_picture_url" => $uploadPath];
+            } else {
+                return ["success" => false, "error" => "Failed to execute statement: " . $stmt->error];
+            }
+        } else {
+            return ["success" => false, "error" => "Failed to move uploaded file"];
+        }
     }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userId = $_POST['userId'];
-    $file = $_FILES['file'];
-
     $uploadHandler = new UploadHandler($userId);
-    $result = $uploadHandler->uploadProfilePicture($file);
+    $result = $uploadHandler->uploadProfilePicture();
 
     echo json_encode($result);
 }
