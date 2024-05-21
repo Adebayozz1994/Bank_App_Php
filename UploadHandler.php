@@ -21,7 +21,7 @@ class UploadHandler extends Config {
         $picture = $_FILES['file'];
         $name = $picture['name'];
         $tmp = $picture['tmp_name'];
-        $newname = time().$name;
+        $newname = time() . '_' . $name;
         $uploadPath = "pictures/".$newname;
     
         if (move_uploaded_file($tmp, $uploadPath)) {
@@ -29,7 +29,7 @@ class UploadHandler extends Config {
             $stmt = $this->connection->prepare($query);
             if($stmt){
                 $stmt->bind_param('si', $newname, $this->userId);
-                $stmt->execute();
+                // $stmt->execute();
                 if ($stmt->execute()) {
                     return [
                         "success" => true, 
