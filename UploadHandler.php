@@ -21,7 +21,7 @@ class UploadHandler extends Config {
         $picture = $_FILES['file'];
         $name = $picture['name'];
         $tmp = $picture['tmp_name'];
-        $newname = time() . '_' . $name;
+        $newname = time() . $name;
         $uploadPath = "pictures/".$newname;
     
         if (move_uploaded_file($tmp, $uploadPath)) {
