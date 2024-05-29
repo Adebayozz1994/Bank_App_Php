@@ -1,4 +1,4 @@
-// add_transaction.php
+<?php
 require_once("config.php");
 
 class Transaction extends config {
@@ -20,7 +20,6 @@ class Transaction extends config {
     }
 }
 
-// Create instance and call the method
 $transactionDetails = json_decode(file_get_contents("php://input"), true);
 $accountId = $transactionDetails['account_id'];
 $amount = $transactionDetails['amount'];
@@ -28,3 +27,4 @@ $transactionType = $transactionDetails['transaction_type'];
 $Transaction = new Transaction();
 $response = $Transaction->addTransaction($accountId, $amount, $transactionType);
 echo json_encode($response);
+?>

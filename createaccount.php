@@ -1,4 +1,4 @@
-// add_account.php
+<?php
 require_once("config.php");
 
 class BankAccount extends config {
@@ -22,13 +22,13 @@ class BankAccount extends config {
     }
 
     private function generateAccountNumber() {
-        return 'ACC' . rand(1000000000, 9999999999); // Simple example, adjust as needed
+        return 'ACC' . rand(1000000000, 9999999999);
     }
 }
 
-// Create instance and call the method
 $userDetails = json_decode(file_get_contents("php://input"), true);
 $userId = $userDetails['user_id'];
 $BankAccount = new BankAccount();
 $response = $BankAccount->createAccount($userId);
 echo json_encode($response);
+?>
