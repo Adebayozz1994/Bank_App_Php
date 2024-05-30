@@ -52,7 +52,8 @@ class BankAccount extends config {
     }
 
     private function generateAccountNumber() {
-        return rand(1000000000, 9999999999);
+        
+        return mt_rand((int)1000000000, (int)9999999999);
     }
 }
 
