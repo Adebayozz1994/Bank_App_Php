@@ -7,46 +7,75 @@ header("Content-Type: application/json");
 
 $request = json_decode(file_get_contents("php://input"), true);
 
-if (!isset($request['senderId']) || !isset($request['receiverId']) || !isset($request['amount'])) {
+if (!isset($request['senderAccountNumber']) || !isset($request['receiverAccountNumber']) || !isset($request['amount'])) {
     echo json_encode(['status' => false, 'message' => 'Invalid request']);
     exit;
 }
 
-$senderId = $request['senderId'];
-$receiverId = $request['receiverId'];
+$senderAccountNumber = $request['senderAccountNumber'];
+$receiverAccountNumber = $request['receiverAccountNumber'];
 $amount = $request['amount'];
 
 class Transaction extends config {
-    public function sendMoney($senderId, $receiverId, $amount) {
+    public function sendMoney($senderAccountNumber, $receiverAccountNumber, $amount) {
         $this->connect->begin_transaction();
 
         try {
-            $updateSender = "UPDATE bank_table SET balance = balance - ? WHERE user_id = ?";
-            $updateReceiver = "UPDATE bank_table SET balance = balance + ? WHERE user_id = ?";
-
-            $stmt1 = $this->connect->prepare($updateSender);
-            $stmt1->bind_param('di', $amount, $senderId);
+            // Check if sender and receiver accounts exist
+            $checkSenderQuery = "SELECT * FROM accounts WHERE account_number = ?";
+            $stmt1 = $this->connect->prepare($checkSenderQuery);
+            $stmt1->bind_param('s', $senderAccountNumber);
             $stmt1->execute();
+            $senderResult = $stmt1->get_result();
 
-            $stmt2 = $this->connect->prepare($updateReceiver);
-            $stmt2->bind_param('di', $amount, $receiverId);
+            if ($senderResult->num_rows === 0) {
+                return ['status' => false, 'message' => 'Sender account not found'];
+            }
+
+            $checkReceiverQuery = "SELECT * FROM accounts WHERE account_number = ?";
+            $stmt2 = $this->connect->prepare($checkReceiverQuery);
+            $stmt2->bind_param('s', $receiverAccountNumber);
             $stmt2->execute();
+            $receiverResult = $stmt2->get_result();
 
-            $transactionQuery = "INSERT INTO transactions (sender_id, receiver_id, amount) VALUES (?, ?, ?)";
-            $stmt3 = $this->connect->prepare($transactionQuery);
-            $stmt3->bind_param('iid', $senderId, $receiverId, $amount);
+            if ($receiverResult->num_rows === 0) {
+                return ['status' => false, 'message' => 'Receiver account not found'];
+            }
+
+            // Update balances
+            $updateSender = "UPDATE accounts SET balance = balance - ? WHERE account_number = ?";
+            $updateReceiver = "UPDATE accounts SET balance = balance + ? WHERE account_number = ?";
+
+            $stmt3 = $this->connect->prepare($updateSender);
+            $stmt3->bind_param('ds', $amount, $senderAccountNumber);
             $stmt3->execute();
+
+            $stmt4 = $this->connect->prepare($updateReceiver);
+            $stmt4->bind_param('ds', $amount, $receiverAccountNumber);
+            $stmt4->execute();
+
+            // Insert transaction record for sender (debit)
+            $transactionQuerySender = "INSERT INTO transactions (account_id, amount, transaction_type) VALUES ((SELECT id FROM accounts WHERE account_number = ?), ?, 'debit')";
+            $stmt5 = $this->connect->prepare($transactionQuerySender);
+            $stmt5->bind_param('sd', $senderAccountNumber, $amount);
+            $stmt5->execute();
+
+            // Insert transaction record for receiver (credit)
+            $transactionQueryReceiver = "INSERT INTO transactions (account_id, amount, transaction_type) VALUES ((SELECT id FROM accounts WHERE account_number = ?), ?, 'credit')";
+            $stmt6 = $this->connect->prepare($transactionQueryReceiver);
+            $stmt6->bind_param('sd', $receiverAccountNumber, $amount);
+            $stmt6->execute();
 
             $this->connect->commit();
             return ['status' => true, 'message' => 'Transaction successful'];
         } catch (Exception $e) {
             $this->connect->rollback();
-            return ['status' => false, 'message' => 'Transaction failed'];
+            return ['status' => false, 'message' => 'Transaction failed', 'error' => $e->getMessage()];
         }
     }
 }
 
 $transaction = new Transaction();
-$response = $transaction->sendMoney($senderId, $receiverId, $amount);
+$response = $transaction->sendMoney($senderAccountNumber, $receiverAccountNumber, $amount);
 echo json_encode($response);
 ?>
