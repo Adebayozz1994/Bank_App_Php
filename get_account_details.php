@@ -1,47 +1,35 @@
 <?php
 require('config.php');
 
-// Set CORS headers
 header("Access-Control-Allow-Origin: http://localhost:4200");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    // Handle preflight request
+if (!isset($_GET['account_id'])) {
+    echo json_encode(['status' => false, 'message' => 'Invalid request']);
     exit;
 }
 
-if (!isset($_GET['accountNumber'])) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Invalid request']);
-    exit;
-}
+$account_id = $_GET['account_id'];
 
-$accountNumber = $_GET['accountNumber'];
-
-class AccountHolder extends config {
-    public function getAccountHolderName($accountNumber) {
-        $query = "SELECT name FROM accounts WHERE account_number = ?";
+class AccountBalance extends config {
+    public function getBalance($account_id) {
+        $query = "SELECT balance FROM accounts WHERE id = ?";
         $stmt = $this->connect->prepare($query);
-        $stmt->bind_param('s', $accountNumber);
+        $stmt->bind_param('i', $account_id);
         $stmt->execute();
         $result = $stmt->get_result();
-
-        if ($row = $result->fetch_assoc()) {
-            return $row['name'];
-        } else {
-            return null;
+        
+        if ($result->num_rows === 0) {
+            return ['status' => false, 'message' => 'Account not found'];
         }
+        
+        $account = $result->fetch_assoc();
+        return ['status' => true, 'balance' => $account['balance']];
     }
 }
 
-$accountHolder = new AccountHolder();
-$accountName = $accountHolder->getAccountHolderName($accountNumber);
-if ($accountName !== null) {
-    echo json_encode(['accountName' => $accountName]);
-} else {
-    http_response_code(404);
-    echo json_encode(['error' => 'Account not found']);
-}
+$balanceChecker = new AccountBalance();
+$response = $balanceChecker->getBalance($account_id);
+echo json_encode($response);
 ?>
