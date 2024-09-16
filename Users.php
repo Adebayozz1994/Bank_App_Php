@@ -5,10 +5,10 @@ class User extends config{
     {
         parent::__construct();
     }
-    public function createUser( $first_name, $last_name , $email, $password, $address,$phone_number,$gender){
-    $query = "INSERT INTO  `bank_table` (`first_name`, `last_name`, `email`, `password`, `address`,`phone_number`,`gender`) VALUES (?,?,?,?,?,?,?)";
+    public function createUser( $first_name, $last_name , $email, $password, $address,$phone_number,$gender,$role){
+    $query = "INSERT INTO  `bank_table` (`first_name`, `last_name`, `email`, `password`, `address`,`phone_number`,`gender`,`role`) VALUES (?,?,?,?,?,?,?,?)";
     $hashpassword = password_hash($password, PASSWORD_DEFAULT);
-    $binder = array('sssssss', $first_name, $last_name, $email, $hashpassword, $address,$phone_number,$gender);
+    $binder = array('ssssssss', $first_name, $last_name, $email, $hashpassword, $address,$phone_number,$gender,$role);
     // parent::create($query, $binder);
 
     $emailQuery = "SELECT * FROM `bank_table` WHERE `email` = ?";

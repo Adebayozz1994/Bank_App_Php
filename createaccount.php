@@ -29,7 +29,7 @@ class BankAccount extends config {
 
     public function createAccount($userId) {
         $accountNumber = $this->generateAccountNumber();
-        $initialBalance = 1000000; // Set initial balance to 1000000
+        $initialBalance = 0; // Set initial balance to 1000000
         $query = "INSERT INTO `accounts` (`user_id`, `account_number`, `balance`) VALUES (?, ?, ?)";
         $stmt = $this->connect->prepare($query);
         $stmt->bind_param('isi', $userId, $accountNumber, $initialBalance);

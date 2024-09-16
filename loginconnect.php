@@ -7,7 +7,6 @@ class loginconnect extends config {
     }
 
     public function loginUser($email, $password) {
-        
         $query = "SELECT * FROM `bank_table` WHERE `email` = ?";
         $stmt = $this->connect->prepare($query);
         $stmt->bind_param('s', $email);
@@ -18,27 +17,27 @@ class loginconnect extends config {
             $user = $result->fetch_assoc();
             $hashedPassword = $user['password'];
             $userId = $user['user_id'];
+            $userRole = $user['role']; // Assuming you have a 'role' column
 
             if (password_verify($password, $hashedPassword)) {
                 return [
                     'status' => true,
                     'message' => 'User login successful',
                     'user' => [
-                        'userId' => $user,
+                        'userId' => $userId,
                         'email' => $email,
-                        'id' => $userId
+                        'role' => $userRole, 
+                        'userId' => $user
+                        
                     ]
-                    
                 ];
             } else {
-                
                 return [
                     'status' => false,
                     'message' => 'Incorrect password'
                 ];
             }
         } else {
-        
             return [
                 'status' => false,
                 'message' => 'User not found'
