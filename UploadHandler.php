@@ -17,42 +17,35 @@ class UploadHandler extends Config {
     }
 
     public function uploadProfilePicture() {
-
         $picture = $_FILES['file'];
-        $name = $picture['name'];
+        
+        if (!$picture || $picture['error'] !== UPLOAD_ERR_OK) {
+            return ["success" => false, "error" => "No file uploaded or upload error"];
+        }
+
+        $name = basename($picture['name']);
         $tmp = $picture['tmp_name'];
-        $newname = time() . $name;
-        $uploadPath = "pictures/".$newname;
-    
+        $newname = time() . '_' . $name;
+        $uploadPath = "pictures/" . $newname;
+
         if (move_uploaded_file($tmp, $uploadPath)) {
             $query = "UPDATE `bank_table` SET `profile_picture` = ? WHERE `user_id` = ?";
             $stmt = $this->connection->prepare($query);
-            if($stmt){
+
+            if ($stmt) {
                 $stmt->bind_param('si', $newname, $this->userId);
-                // $stmt->execute();
                 if ($stmt->execute()) {
                     return [
                         "success" => true, 
                         "profile_picture_url" => $uploadPath,
                         'userId' => $this->userId
                     ];
-                    ;
-                
-                } 
-                else {
+                } else {
                     return ["success" => false, "error" => "Failed to execute statement: " . $stmt->error];
                 }
-            };
-            // if (!$stmt) {
-            //     return ["success" => false, "error" => "Failed to prepare statement: " . $this->connection->error];
-            // }
-    
-    
-            // if ($stmt->execute()) {
-            //     return ["success" => true, "profile_picture_url" => $uploadPath];
-            // } else {
-            //     return ["success" => false, "error" => "Failed to execute statement: " . $stmt->error];
-            // }
+            } else {
+                return ["success" => false, "error" => "Failed to prepare statement: " . $this->connection->error];
+            }
         } else {
             return ["success" => false, "error" => "Failed to move uploaded file"];
         }
