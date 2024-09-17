@@ -21,8 +21,8 @@ class Transaction extends config {
         $this->connect->begin_transaction();
 
         try {
-            // Check if sender and receiver accounts exist
-            $checkSenderQuery = "SELECT * FROM accounts WHERE account_number = ?";
+            // Check if sender account exists and fetch balance
+            $checkSenderQuery = "SELECT balance FROM accounts WHERE account_number = ?";
             $stmt1 = $this->connect->prepare($checkSenderQuery);
             $stmt1->bind_param('s', $senderAccountNumber);
             $stmt1->execute();
@@ -32,6 +32,10 @@ class Transaction extends config {
                 return ['status' => false, 'message' => 'Sender account not found'];
             }
 
+            $senderData = $senderResult->fetch_assoc();
+            $senderBalance = $senderData['balance'];
+
+            // Check if receiver account exists
             $checkReceiverQuery = "SELECT * FROM accounts WHERE account_number = ?";
             $stmt2 = $this->connect->prepare($checkReceiverQuery);
             $stmt2->bind_param('s', $receiverAccountNumber);
@@ -42,7 +46,12 @@ class Transaction extends config {
                 return ['status' => false, 'message' => 'Receiver account not found'];
             }
 
-            // Update balances
+            // Ensure sender has enough balance
+            if ($senderBalance < $amount) {
+                return ['status' => false, 'message' => 'Insufficient funds'];
+            }
+
+            // Proceed with the transaction
             $updateSender = "UPDATE accounts SET balance = balance - ? WHERE account_number = ?";
             $updateReceiver = "UPDATE accounts SET balance = balance + ? WHERE account_number = ?";
 
@@ -74,6 +83,7 @@ class Transaction extends config {
         }
     }
 }
+
 
 $transaction = new Transaction();
 $response = $transaction->sendMoney($senderAccountNumber, $receiverAccountNumber, $amount);
