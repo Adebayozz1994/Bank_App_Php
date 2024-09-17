@@ -6,7 +6,8 @@ header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
 class BankAccount extends config {
-    public function deposit($accountNumber, $amount) {
+    // Verify user password and deposit money into their account
+    public function deposit($accountNumber, $amount, $password) {
         if ($amount <= 0) {
             return [
                 'status' => false,
@@ -15,7 +16,9 @@ class BankAccount extends config {
         }
 
         // Check if the account exists
-        $query = "SELECT * FROM `accounts` WHERE `account_number` = ?";
+        $query = "SELECT a.*, u.password FROM `accounts` a 
+                  JOIN `bank_table` u ON a.user_id = u.user_id 
+                  WHERE a.account_number = ?";
         $stmt = $this->connect->prepare($query);
         $stmt->bind_param('s', $accountNumber);
         $stmt->execute();
@@ -23,6 +26,15 @@ class BankAccount extends config {
 
         if ($result->num_rows > 0) {
             $account = $result->fetch_assoc();
+
+            // Verify the password
+            if (!password_verify($password, $account['password'])) {
+                return [
+                    'status' => false,
+                    'message' => 'Invalid password.'
+                ];
+            }
+
             $newBalance = $account['balance'] + $amount;
 
             // Update the account balance
@@ -53,8 +65,9 @@ class BankAccount extends config {
 $userDetails = json_decode(file_get_contents("php://input"), true);
 $accountNumber = $userDetails['accountNumber'];
 $amount = $userDetails['amount'];
+$password = $userDetails['password'];
 
 $BankAccount = new BankAccount();
-$response = $BankAccount->deposit($accountNumber, $amount);
+$response = $BankAccount->deposit($accountNumber, $amount, $password);
 echo json_encode($response);
 ?>
