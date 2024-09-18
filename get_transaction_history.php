@@ -5,12 +5,13 @@ header("Access-Control-Allow-Origin: http://localhost:4200");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-if (!isset($_GET['account_id'])) {
-    echo json_encode(['status' => false, 'message' => 'Invalid request']);
+// Check if account_id is provided
+if (!isset($_GET['account_id']) || !is_numeric($_GET['account_id'])) {
+    echo json_encode(['status' => false, 'message' => 'Invalid or missing account_id']);
     exit;
 }
 
-$account_id = $_GET['account_id'];
+$account_id = (int)$_GET['account_id']; // Sanitize input
 error_log("Received account_id: " . $account_id);
 
 class TransactionHistory extends config {
@@ -20,7 +21,13 @@ class TransactionHistory extends config {
                 throw new Exception("Database connection not established");
             }
 
-            $query = "SELECT * FROM transactions WHERE account_id = ?";
+            // Join with the accounts and bank_table to get sender and receiver details
+            $query = "SELECT t.id, t.account_id, t.amount, t.transaction_type, t.transaction_date,
+                             a.account_number, CONCAT(u.first_name, ' ', u.last_name) AS account_name
+                      FROM transactions t
+                      JOIN accounts a ON t.account_id = a.id
+                      JOIN bank_table u ON a.user_id = u.user_id
+                      WHERE t.account_id = ?";
             $stmt = $this->connect->prepare($query);
             if (!$stmt) {
                 throw new Exception("Failed to prepare statement: " . $this->connect->error);
