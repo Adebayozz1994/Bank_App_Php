@@ -37,16 +37,36 @@ class BankAccount extends config {
 
             $newBalance = $account['balance'] + $amount;
 
+            // Start transaction
+            $this->connect->begin_transaction();
+
             // Update the account balance
             $updateQuery = "UPDATE `accounts` SET `balance` = ? WHERE `account_number` = ?";
             $updateStmt = $this->connect->prepare($updateQuery);
             $updateStmt->bind_param('ds', $newBalance, $accountNumber);
 
             if ($updateStmt->execute()) {
-                return [
-                    'status' => true,
-                    'message' => 'Deposit successful.'
-                ];
+                // Insert transaction history
+                $insertTransactionQuery = "INSERT INTO `transactions` (`account_id`, `amount`, `transaction_type`, `transaction_date`) 
+                                           VALUES (?, ?, 'credit', NOW())";
+                $insertTransactionStmt = $this->connect->prepare($insertTransactionQuery);
+                $insertTransactionStmt->bind_param('id', $account['id'], $amount);
+
+                if ($insertTransactionStmt->execute()) {
+                    // Commit transaction
+                    $this->connect->commit();
+                    return [
+                        'status' => true,
+                        'message' => 'Deposit successful and transaction recorded.'
+                    ];
+                } else {
+                    // Rollback on failure
+                    $this->connect->rollback();
+                    return [
+                        'status' => false,
+                        'message' => 'Failed to record transaction.'
+                    ];
+                }
             } else {
                 return [
                     'status' => false,
@@ -62,11 +82,13 @@ class BankAccount extends config {
     }
 }
 
+// Retrieve request data
 $userDetails = json_decode(file_get_contents("php://input"), true);
 $accountNumber = $userDetails['accountNumber'];
 $amount = $userDetails['amount'];
 $password = $userDetails['password'];
 
+// Create BankAccount object and process the deposit
 $BankAccount = new BankAccount();
 $response = $BankAccount->deposit($accountNumber, $amount, $password);
 echo json_encode($response);
