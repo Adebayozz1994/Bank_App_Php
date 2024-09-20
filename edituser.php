@@ -12,19 +12,22 @@ class EditUser extends config {
         $lastName = $_POST['last_name'];
         $email = $_POST['email'];
 
-        $query = "UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?";
-        $binder = ['sssi', $firstName, $lastName, $email, $userId]; // 's' for string, 'i' for integer
-        $updateSuccess = $this->create($query, $binder);
+        $query = "UPDATE bank_table SET first_name = ?, last_name = ?, email = ? WHERE id = ?";
+        $stmt = $this->connect->prepare($query); 
 
-        if ($updateSuccess) {
+        // Bind the parameters and execute the statement
+        $stmt->bind_param("sssi", $firstName, $lastName, $email, $userId);
+
+        if($stmt->execute()) {
             echo json_encode(['message' => 'User updated successfully']);
         } else {
             echo json_encode(['message' => 'Error updating user']);
         }
+        
+        $stmt->close();
     }
 }
 
-// Instantiate the class and call the method
 $editUser = new EditUser();
 $editUser->editUser();
 ?>
