@@ -1,12 +1,26 @@
 <?php
-require_once("addtransaction.php");
+require_once("config.php");
 
-$transactionDetails = json_decode(file_get_contents("php://input"), true);
-$accountId = $transactionDetails['account_id'];
-$amount = $transactionDetails['amount'];
-$transactionType = $transactionDetails['transaction_type'];
+class Transaction extends config {
+    public function addTransaction($accountId, $amount, $transactionType, $receiverAccountId = null) {
+        // Updated table to also store receiver account id
+        $query = "INSERT INTO `transactions` (`account_id`, `receiver_account_id`, `amount`, `transaction_type`, `timestamp`) 
+                  VALUES (?, ?, ?, ?, NOW())";
+        $stmt = $this->connect->prepare($query);
+        $stmt->bind_param('iids', $accountId, $receiverAccountId, $amount, $transactionType);
 
-$Transaction = new Transaction();
-$response = $Transaction->addTransaction($accountId, $amount, $transactionType);
-echo json_encode($response);
+        if ($stmt->execute()) {
+            return [
+                'status' => true,
+                'message' => 'Transaction recorded successfully'
+            ];
+        } else {
+            return [
+                'status' => false,
+                'message' => 'Failed to record transaction',
+                'error' => $stmt->error
+            ];
+        }
+    }
+}
 ?>

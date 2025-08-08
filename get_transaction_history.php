@@ -5,14 +5,12 @@ header("Access-Control-Allow-Origin: http://localhost:4200");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-// Check if account_id is provided
 if (!isset($_GET['account_id']) || !is_numeric($_GET['account_id'])) {
     echo json_encode(['status' => false, 'message' => 'Invalid or missing account_id']);
     exit;
 }
 
-$account_id = (int)$_GET['account_id']; // Sanitize input
-error_log("Received account_id: " . $account_id);
+$account_id = (int) $_GET['account_id'];
 
 class TransactionHistory extends config {
     public function getTransactionHistory($account_id) {
@@ -21,40 +19,52 @@ class TransactionHistory extends config {
                 throw new Exception("Database connection not established");
             }
 
-            // Join with the accounts and bank_table to get sender and receiver details
-            $query = "SELECT t.id, t.account_id, t.amount, t.transaction_type, t.transaction_date,
-                             a.account_number, CONCAT(u.first_name, ' ', u.last_name) AS account_name
-                      FROM transactions t
-                      JOIN accounts a ON t.account_id = a.id
-                      JOIN bank_table u ON a.user_id = u.user_id
-                      WHERE t.account_id = ?";
+            $query = "
+                SELECT 
+                    t.id,
+                    t.amount,
+                    t.transaction_type,
+                    t.transaction_date,
+                    sa.account_number AS sender_account_number,
+                    CONCAT(sb.first_name, ' ', sb.last_name) AS sender_name,
+                    ra.account_number AS receiver_account_number,
+                    CONCAT(rb.first_name, ' ', rb.last_name) AS receiver_name
+                FROM transactions t
+                JOIN accounts sa ON t.sender_account_id = sa.id
+                JOIN bank_table sb ON sa.user_id = sb.user_id
+                JOIN accounts ra ON t.receiver_account_id = ra.id
+                JOIN bank_table rb ON ra.user_id = rb.user_id
+                WHERE 
+                    (t.sender_account_id = ? AND t.transaction_type = 'debit')
+                    OR 
+                    (t.receiver_account_id = ? AND t.transaction_type = 'credit')
+                ORDER BY t.transaction_date DESC
+            ";
+
             $stmt = $this->connect->prepare($query);
             if (!$stmt) {
                 throw new Exception("Failed to prepare statement: " . $this->connect->error);
             }
-            $stmt->bind_param('i', $account_id);
+
+            // Bind twice: once for sender, once for receiver
+            $stmt->bind_param('ii', $account_id, $account_id);
             $stmt->execute();
             $result = $stmt->get_result();
 
             $transactions = [];
             while ($row = $result->fetch_assoc()) {
+                // Add a direction for frontend convenience
+                $row['direction'] = ($row['transaction_type'] === 'debit') ? 'sent' : 'received';
                 $transactions[] = $row;
             }
 
             return ['status' => true, 'transactions' => $transactions];
         } catch (Exception $e) {
-            error_log("Error in getTransactionHistory: " . $e->getMessage());
-            return ['status' => false, 'message' => 'Failed to fetch transaction history', 'error' => $e->getMessage()];
+            return ['status' => false, 'message' => $e->getMessage()];
         }
     }
 }
 
-try {
-    $transactionHistory = new TransactionHistory();
-    $response = $transactionHistory->getTransactionHistory($account_id);
-    echo json_encode($response);
-} catch (Exception $e) {
-    error_log("Error initializing TransactionHistory: " . $e->getMessage());
-    echo json_encode(['status' => false, 'message' => 'Internal server error']);
-}
-?>
+$transactionHistory = new TransactionHistory();
+$response = $transactionHistory->getTransactionHistory($account_id);
+echo json_encode($response);

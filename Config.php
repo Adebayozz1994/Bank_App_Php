@@ -10,6 +10,8 @@ class config{
             // echo json_encode('error') ;
         }else{
             // echo json_encode('connected') ;
+            // Ensure autocommit is enabled
+            $this->connect->autocommit(true);
         }
     }
     

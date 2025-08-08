@@ -17,7 +17,7 @@ class loginconnect extends config {
             $user = $result->fetch_assoc();
             $hashedPassword = $user['password'];
             $userId = $user['user_id'];
-            $userRole = $user['role']; // Assuming you have a 'role' column
+            $userRole = $user['role']; 
 
             if (password_verify($password, $hashedPassword)) {
                 return [
