@@ -8,11 +8,11 @@ header("Content-Type: application/json");
 class AddDeductUser extends config {
 
     public function processRequest() {
-        global $pdo; // Assuming $pdo is defined in config.php
+        global $pdo; 
 
         $accountNumber = $_POST['account_number'];
         $amount = $_POST['amount'];
-        $operation = $_POST['operation']; // 'add' or 'deduct'
+        $operation = $_POST['operation']; 
 
         if (!$accountNumber || !$amount || !in_array($operation, ['add', 'deduct'])) {
             echo json_encode(['message' => 'Invalid input']);

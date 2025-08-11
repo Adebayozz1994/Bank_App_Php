@@ -46,12 +46,10 @@ class Transaction extends config {
             $receiverData = $receiverResult->fetch_assoc();
             $receiverId = $receiverData['id'];
 
-            // Check funds
             if ($senderBalance < $amount) {
                 return ['status' => false, 'message' => 'Insufficient funds'];
             }
 
-            // Update balances
             $stmt3 = $this->connect->prepare("UPDATE accounts SET balance = balance - ? WHERE id = ?");
             $stmt3->bind_param('di', $amount, $senderId);
             $stmt3->execute();

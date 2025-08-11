@@ -7,7 +7,7 @@ header("Content-Type: application/json");
 
 $request = json_decode(file_get_contents("php://input"), true);
 
-if (!isset($request['accountId']) || !isset($request['phoneNumber']) || !isset($request['dataPlan']) || !isset($request['amount'])) {
+if (!isset($request['accountId'], $request['phoneNumber'], $request['dataPlan'], $request['amount'])) {
     echo json_encode(['status' => false, 'message' => 'Invalid request']);
     exit;
 }
@@ -19,90 +19,37 @@ $amount = $request['amount'];
 
 class DataTransaction extends config {
     public function buyData($accountId, $phoneNumber, $dataPlan, $amount) {
-        // Validate inputs
-        if ($amount <= 0) {
-            return ['status' => false, 'message' => 'Invalid amount'];
-        }
-        
-        if (!preg_match('/^[0-9]{10,15}$/', $phoneNumber)) {
-            return ['status' => false, 'message' => 'Invalid phone number format'];
-        }
-        
-        if (empty($dataPlan)) {
-            return ['status' => false, 'message' => 'Data plan is required'];
-        }
-        
+        if ($amount <= 0) return ['status' => false, 'message' => 'Invalid amount'];
+        if (!preg_match('/^[0-9]{10,15}$/', $phoneNumber)) return ['status' => false, 'message' => 'Invalid phone number format'];
+        if (empty($dataPlan)) return ['status' => false, 'message' => 'Data plan is required'];
+
         $this->connect->begin_transaction();
 
         try {
-            // Check if account exists and has sufficient balance
-            $checkAccountQuery = "SELECT balance FROM accounts WHERE id = ?";
-            $stmt = $this->connect->prepare($checkAccountQuery);
+            $stmt = $this->connect->prepare("SELECT balance FROM accounts WHERE id = ?");
             $stmt->bind_param('i', $accountId);
             $stmt->execute();
             $result = $stmt->get_result();
-            
-            if ($result->num_rows === 0) {
-                $this->connect->rollback();
-                return ['status' => false, 'message' => 'Account not found'];
-            }
-
+            if ($result->num_rows === 0) throw new Exception("Account not found");
             $account = $result->fetch_assoc();
-            $currentBalance = $account['balance'];
-            
-            if ($currentBalance < $amount) {
-                $this->connect->rollback();
-                return ['status' => false, 'message' => "Insufficient balance. Current balance: ₦" . number_format($currentBalance, 2)];
-            }
 
-            // Deduct balance from accounts table
-            $updateBalanceQuery = "UPDATE accounts SET balance = balance - ? WHERE id = ?";
-            $balanceStmt = $this->connect->prepare($updateBalanceQuery);
-            $balanceStmt->bind_param('di', $amount, $accountId);
-            
-            if (!$balanceStmt->execute()) {
-                $this->connect->rollback();
-                return ['status' => false, 'message' => 'Failed to update account balance'];
-            }
+            if ($account['balance'] < $amount) throw new Exception("Insufficient balance. Current balance: ₦" . number_format($account['balance'], 2));
 
-            // Insert into main transactions table for tracking
-            $insertMainTransactionQuery = "INSERT INTO transactions (account_id, amount, transaction_type, description) VALUES (?, ?, 'debit', ?)";
-            $description = "Data purchase: " . $dataPlan . " for " . $phoneNumber;
-            $mainTransStmt = $this->connect->prepare($insertMainTransactionQuery);
-            $mainTransStmt->bind_param('ids', $accountId, $amount, $description);
-            
-            if (!$mainTransStmt->execute()) {
-                $this->connect->rollback();
-                return ['status' => false, 'message' => 'Failed to record main transaction'];
-            }
+            $stmt = $this->connect->prepare("UPDATE accounts SET balance = balance - ? WHERE id = ?");
+            $stmt->bind_param('di', $amount, $accountId);
+            if (!$stmt->execute()) throw new Exception("Failed to update balance");
 
-            // Insert into data transactions table for detailed tracking
-            $insertDataQuery = "INSERT INTO data_transactions (account_id, phone_number, data_plan, amount) VALUES (?, ?, ?, ?)";
-            $dataStmt = $this->connect->prepare($insertDataQuery);
-            $dataStmt->bind_param('issd', $accountId, $phoneNumber, $dataPlan, $amount);
-            
-            if (!$dataStmt->execute()) {
-                $this->connect->rollback();
-                return ['status' => false, 'message' => 'Failed to record data transaction'];
-            }
+            $stmt = $this->connect->prepare("INSERT INTO transactions (account_id, amount, transaction_type, transaction_date) VALUES (?, ?, 'debit', NOW())");
+            $stmt->bind_param('id', $accountId, $amount);
+            if (!$stmt->execute()) throw new Exception("Failed to record transaction");
+
+            $stmt = $this->connect->prepare("INSERT INTO data_transactions (account_id, phone_number, data_plan, amount, transaction_date) VALUES (?, ?, ?, ?, NOW())");
+            $stmt->bind_param('issd', $accountId, $phoneNumber, $dataPlan, $amount);
+            if (!$stmt->execute()) throw new Exception("Failed to record data transaction");
 
             $this->connect->commit();
-            
-            // Get new balance
-            $newBalance = $currentBalance - $amount;
-            
-            return [
-                'status' => true, 
-                'message' => 'Data purchase successful',
-                'transaction_details' => [
-                    'phone_number' => $phoneNumber,
-                    'data_plan' => $dataPlan,
-                    'amount' => $amount,
-                    'previous_balance' => $currentBalance,
-                    'new_balance' => $newBalance,
-                    'transaction_id' => $this->connect->insert_id
-                ]
-            ];
+
+            return ['status' => true, 'message' => 'Data purchase successful'];
         } catch (Exception $e) {
             $this->connect->rollback();
             return ['status' => false, 'message' => 'Transaction failed: ' . $e->getMessage()];
@@ -110,8 +57,6 @@ class DataTransaction extends config {
     }
 }
 
-$dataTransaction = new DataTransaction();
-$response = $dataTransaction->buyData($accountId, $phoneNumber, $dataPlan, $amount);
+$dt = new DataTransaction();
+$response = $dt->buyData($accountId, $phoneNumber, $dataPlan, $amount);
 echo json_encode($response);
-?>
-

@@ -1,17 +1,13 @@
 <?php
 require_once("config.php");
 
-// Allow requests from the Angular app
 header("Access-Control-Allow-Origin: http://localhost:4200");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-// Define the BankAccount class which extends the config
 class BankAccount extends config {
     
-    // Function to retrieve account holder's name by account number
     public function getAccountName($accountNumber) {
-        // Query to fetch the account holder's first and last name based on account number
         $query = "SELECT u.first_name, u.last_name FROM `accounts` a 
                   JOIN `bank_table` u ON a.user_id = u.user_id 
                   WHERE a.account_number = ?";
@@ -29,7 +25,6 @@ class BankAccount extends config {
                 'accountName' => $fullName
             ];
         } else {
-            // If account doesn't exist, return a failure response
             return [
                 'status' => false,
                 'message' => 'Account not found.'
@@ -47,7 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $BankAccount = new BankAccount();
         $response = $BankAccount->getAccountName($accountNumber);
         
-        // Send the response as JSON
         echo json_encode($response);
     } else {
         echo json_encode([
@@ -56,7 +50,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         ]);
     }
 } else {
-    // If the request method is not GET, return a method not allowed error
     echo json_encode([
         'status' => false,
         'message' => 'Invalid request method.'

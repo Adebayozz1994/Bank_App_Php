@@ -42,7 +42,6 @@ class ResetPassword extends config {
         $reset_record = $result->fetch_assoc();
         $email = $reset_record['email'];
         
-        // Hash the new password
         $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
         
         // Update the user's password

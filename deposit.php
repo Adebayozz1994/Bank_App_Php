@@ -82,7 +82,7 @@ class BankAccount extends config {
     }
 }
 
-// Retrieve request data
+
 $userDetails = json_decode(file_get_contents("php://input"), true);
 $accountNumber = $userDetails['accountNumber'];
 $amount = $userDetails['amount'];

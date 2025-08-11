@@ -24,7 +24,7 @@ if (isset($request['action'])) {
             echo json_encode(['status' => false, 'message' => 'Account not found']);
         }
     } elseif ($request['action'] === 'sendMoney' && isset($request['senderAccountNumber']) && isset($request['receiverAccountNumber']) && isset($request['amount']) && isset($request['password'])) {
-        // Your existing sendMoney logic
+        
     } else {
         echo json_encode(['status' => false, 'message' => 'Invalid request']);
     }

@@ -19,7 +19,6 @@ class ForgotPassword extends config {
             return ['status' => false, 'message' => 'Email is required'];
         }
         
-        // Check if email exists in the database
         $query = "SELECT user_id, first_name FROM `bank_table` WHERE `email` = ?";
         $stmt = $this->connect->prepare($query);
         $stmt->bind_param('s', $email);
@@ -66,12 +65,10 @@ class ForgotPassword extends config {
                 // Create reset link
                 $reset_link = "http://localhost:4200/reset-password?token=" . $reset_token;
                 
-                // In a real application, you would send an email here
-                // For development purposes, return the reset link in the response
                 return [
                     'status' => true, 
                     'message' => 'Password reset instructions sent to your email',
-                    'debug_reset_link' => $reset_link, // Remove this in production
+                    'debug_reset_link' => $reset_link,
                     'debug_info' => [
                         'email' => $email,
                         'token' => $reset_token,
